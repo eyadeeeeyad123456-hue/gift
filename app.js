@@ -255,6 +255,20 @@ function showToast(msg) {
   setTimeout(() => saveToast.classList.remove('show'), 2800);
 }
 
+// الإعدادات السحابية الافتراضية المؤكدة لـ Supabase
+const DEFAULT_SUPABASE_CONFIG = {
+  url: 'https://yxxvsmuvowviakxeitor.supabase.co',
+  anonKey: 'sb_publishable_uUkLSKLLog9MOYmwBrDWWQ_71PptEGX',
+  tableName: 'site_data',
+  recordId: 'farah_scrapbook'
+};
+
+const isLocalServer = () => {
+  return window.location.hostname === 'localhost' || 
+         window.location.hostname === '127.0.0.1' || 
+         window.location.port === '4173';
+};
+
 // قراءة إعدادات Supabase
 function getSupabaseSettings() {
   const local = localStorage.getItem('farah_supabase_config');
@@ -267,7 +281,7 @@ function getSupabaseSettings() {
   if (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.anonKey) {
     return window.SUPABASE_CONFIG;
   }
-  return null;
+  return DEFAULT_SUPABASE_CONFIG;
 }
 
 // تهيئة عميل Supabase
@@ -298,7 +312,7 @@ async function fetchFromSupabase(cfg) {
   if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
     return rows[0].data;
   }
-  return null;
+  return {};
 }
 
 // حفظ البيانات في Supabase مباشرة
@@ -325,7 +339,7 @@ async function upsertToSupabase(cfg, dataToSave) {
   return true;
 }
 
-// جلب التعديلات (من Supabase أولاً إن وجد، أو من السيرفر المحلي)
+// جلب التعديلات (من Supabase أولاً)
 async function loadServerData() {
   // 1. قراءة فورية من التخزين المؤقت
   const localCache = localStorage.getItem('farah_cloud_data');
@@ -336,7 +350,7 @@ async function loadServerData() {
     } catch (e) {}
   }
 
-  // 2. إذا كان Supabase مفعلاً، نقرأ منه مباشرة
+  // 2. إذا كان Supabase مفعلاً (وهو الافتراضي الآن)، نقرأ منه مباشرة
   const cfg = getSupabaseSettings();
   if (cfg && cfg.url && cfg.anonKey) {
     try {
@@ -347,29 +361,30 @@ async function loadServerData() {
         localStorage.setItem('farah_cloud_data', JSON.stringify(siteData));
         applyDataToDOM();
         if (syncStatus) syncStatus.textContent = '⚡ متزامن سحابياً (Supabase)';
-        return;
+        return; // اكتمل بنجاح، لا حاجة لطلب السيرفر المحلي
       }
     } catch (err) {
       console.warn('خطأ في جلب بيانات Supabase:', err);
     }
   }
 
-  // 3. إن لم يتوفر Supabase، نقرأ من السيرفر المحلي
-  try {
-    const res = await fetch('/api/data?t=' + Date.now());
-    if (res.ok) {
-      const data = await res.json();
-      if (data && typeof data === 'object') {
-        siteData.texts = data.texts || siteData.texts || {};
-        siteData.stickers = data.stickers || siteData.stickers || {};
-        localStorage.setItem('farah_cloud_data', JSON.stringify(siteData));
-        applyDataToDOM();
-        if (syncStatus) syncStatus.textContent = '☁️ متزامن مع جميع الأجهزة';
+  // 3. إن كان يعمل على سيرفر محلي خاص Node.js ولم نصل لـ Supabase
+  if (isLocalServer()) {
+    try {
+      const res = await fetch('/api/data?t=' + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === 'object') {
+          siteData.texts = data.texts || siteData.texts || {};
+          siteData.stickers = data.stickers || siteData.stickers || {};
+          localStorage.setItem('farah_cloud_data', JSON.stringify(siteData));
+          applyDataToDOM();
+          if (syncStatus) syncStatus.textContent = '☁️ متزامن مع السيرفر المحلي';
+        }
       }
+    } catch (err) {
+      if (syncStatus) syncStatus.textContent = '⚠️ يعمل محلياً';
     }
-  } catch (err) {
-    console.warn('تعذر الاتصال بالسيرفر، جاري العمل محلياً:', err);
-    if (syncStatus) syncStatus.textContent = '⚠️ يعمل محلياً (غير متصل بالسيرفر)';
   }
 }
 
@@ -404,45 +419,44 @@ async function saveToServer(manual = false) {
   // حفظ محلي فوري
   localStorage.setItem('farah_cloud_data', JSON.stringify(siteData));
 
-  // 1. إذا كان Supabase مفعلاً، نحفظ في سحابة Supabase مباشرة
+  // 1. الحفظ في سحابة Supabase مباشرة
   const cfg = getSupabaseSettings();
   if (cfg && cfg.url && cfg.anonKey) {
     try {
       await upsertToSupabase(cfg, siteData);
       if (syncStatus) syncStatus.textContent = '⚡ متزامن سحابياً (Supabase) ✓';
       if (manual) showToast('تم الحفظ في سحابة Supabase بنجاح ⚡☁️');
-      return;
+      return; // اكتمل بنجاح، لا حاجة لطلب السيرفر المحلي
     } catch (err) {
       console.warn('خطأ أثناء حفظ Supabase:', err);
+      if (syncStatus) syncStatus.textContent = '⚠️ تعذر الحفظ السحابي';
+      if (manual) showToast('⚠️ تعذر الحفظ السحابي في Supabase');
     }
   }
 
-  // 2. إذا لم يكن Supabase مفعلاً، نحفظ عبر السيرفر المحلي
-  try {
-    const res = await fetch('/api/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Admin-Pin': currentPin || ADMIN_PIN
-      },
-      body: JSON.stringify({
-        pin: currentPin || ADMIN_PIN,
-        texts: siteData.texts,
-        stickers: siteData.stickers
-      })
-    });
+  // 2. الحفظ عبر السيرفر المحلي إذا كان يعمل على Node.js
+  if (isLocalServer()) {
+    try {
+      const res = await fetch('/api/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Pin': currentPin || ADMIN_PIN
+        },
+        body: JSON.stringify({
+          pin: currentPin || ADMIN_PIN,
+          texts: siteData.texts,
+          stickers: siteData.stickers
+        })
+      });
 
-    if (res.ok) {
-      if (syncStatus) syncStatus.textContent = '☁️ متزامن مع جميع الأجهزة (تم الحفظ)';
-      if (manual) showToast('تم حفظ التعديلات لجميع الأجهزة بنجاح ☁️✨');
-    } else {
-      const err = await res.json().catch(() => ({}));
-      if (syncStatus) syncStatus.textContent = '⚠️ لم يتم الحفظ: ' + (err.error || 'خطأ بالسيرفر');
-      if (manual) showToast('⚠️ تعذر الحفظ: ' + (err.error || 'رمز التعديل غير صحيح'));
+      if (res.ok) {
+        if (syncStatus) syncStatus.textContent = '☁️ متزامن محلياً (تم الحفظ)';
+        if (manual) showToast('تم حفظ التعديلات محلياً بنجاح ☁️');
+      }
+    } catch (err) {
+      if (syncStatus) syncStatus.textContent = '⚠️ تم الحفظ محلياً على هذا الجهاز';
     }
-  } catch (err) {
-    if (syncStatus) syncStatus.textContent = '⚠️ تم الحفظ محلياً فقط (تعذر الوصول للسيرفر)';
-    if (manual) showToast('تم الحفظ محلياً على هذا الجهاز');
   }
 }
 
