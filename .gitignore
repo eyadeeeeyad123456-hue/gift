@@ -1,0 +1,13 @@
+# Logs
+*.log
+npm-debug.log*
+
+# OS Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Local / Temporary
+node_modules/

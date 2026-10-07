@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f7dedf">
+  <title>هدية فرح 🎀</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa+Ink:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <button class="admin-trigger" aria-label="لوحة التعديل" title="لوحة التعديل">✎</button>
+  
+  <!-- نافذة طلب رمز الإدارة -->
+  <div id="admin-pin-dialog" class="pin-dialog-backdrop" aria-hidden="true">
+    <div class="pin-dialog">
+      <button class="close-pin-dialog" id="close-pin-dialog" aria-label="إغلاق">×</button>
+      <div class="pin-icon">🎀 🔐</div>
+      <h3>وضع التعديل</h3>
+      <p>أدخل رمز الإدارة للمتابعة:</p>
+      <input type="password" id="admin-pin-input" inputmode="numeric" placeholder="أدخل الرمز هنا" maxlength="20" autocomplete="off">
+      <div id="pin-error-msg" class="pin-error"></div>
+      <div class="pin-dialog-actions">
+        <button id="submit-pin-btn" class="submit-pin-btn">تأكيد الدخول</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- لوحة الإدارة والتحكم -->
+  <aside class="admin-panel" aria-hidden="true">
+    <button class="close-admin" aria-label="إغلاق">×</button>
+    <h2>غرفة التعديل ✎</h2>
+    <div id="sync-status" class="sync-status">☁️ متزامن مع السيرفر</div>
+    <p>بعد إدخال الرمز، اضغط على أي نص وعدّله مباشرة وسيُحفظ لجميع الأجهزة تلقائياً. يمكن سحب الملصقات وتكبيرها.</p>
+    <div class="admin-actions">
+      <button id="save-server-btn" class="save-server-btn">💾 حفظ التعديلات الآن لجميع الأجهزة</button>
+      <button id="open-supabase-dialog" class="supabase-btn">⚡ ربط السحاب (Supabase)</button>
+      <div class="sticker-ctrls">
+        <button id="sticker-smaller">− تصغير ملصق</button>
+        <button id="sticker-larger">+ تكبير ملصق</button>
+      </div>
+      <button id="export-data">حفظ نسخة احتياطية (ملف)</button>
+      <label class="import-label">استرجاع نسخة من ملف<input id="import-data" type="file" accept="application/json"></label>
+      <button class="reset-data">استعادة النصوص الأصلية</button>
+      <button id="lock-admin" class="lock-admin">🔒 قفل وضع التعديل</button>
+    </div>
+  </aside>
+
+  <!-- تنبيه الحفظ -->
+  <div id="save-toast" class="save-toast" aria-hidden="true">تم الحفظ لجميع الأجهزة بنجاح ☁️</div>
+
+  <main id="gift-content" class="gift-locked">
+    <section class="opening" id="opening">
+      <div class="tiny-kitty">♡</div>
+      <div class="gift-box" aria-hidden="true"><i></i><b>🎀</b></div>
+      <div class="opening-copy">
+        <p data-editable data-edit-key="open-1">فرح...</p>
+        <p data-editable data-edit-key="open-2">عندي لك شيء 🎀</p>
+        <h1 data-editable data-edit-key="open-3">توافقي تستلمي هديتك؟</h1>
+      </div>
+      <div class="no-stickers">
+        <img src="assets/هيلو كيتي/صور بدون خلفية/cry.png" alt="ملصق CRY">
+        <img src="assets/هيلو كيتي/صور بدون خلفية/start.png" alt="ملصق START">
+      </div>
+      <div class="choice">
+        <button class="yes" data-editable data-edit-key="open-yes">أيوه، أكيد</button>
+        <button class="no" data-editable data-edit-key="open-no">لاا</button>
+      </div>
+    </section>
+
+    <section class="chapter intro hidden" id="intro">
+      <p class="eyebrow" data-editable data-edit-key="intro-eyebrow">صفحات من أشياء أحبها فيك</p>
+      <h2 data-editable data-edit-key="intro-heading">فيه ذكريات ما تنحط في ألبوم…<br>تنحط في القلب.</h2>
+      <span class="scroll-note" data-editable data-edit-key="intro-scroll">انزلي بهدوء ↓</span>
+    </section>
+
+    <section class="scrapbook chapter" id="memories">
+      <div class="paper-top"><span data-editable data-edit-key="memories-top">أول الصفحات</span><i>✿</i></div>
+      <div class="memory-head">
+        <h2 data-editable data-edit-key="memories-title">فرح الصغيرة</h2>
+        <p data-editable data-edit-key="memories-desc">صور لها نفس ضحكتك، بس أصغر شوي.</p>
+      </div>
+      <div class="photo-wall childhood" data-folder="صغيره"></div>
+      <img class="admin-sticker sticker-one" data-sticker-id="sticker-1" src="assets/هيلو كيتي/صور بدون خلفية/01_هيلو_كيتي_فراولة.png" alt="ملصق Hello Kitty">
+      <img class="admin-sticker sticker-two" data-sticker-id="sticker-2" src="assets/هيلو كيتي/صور بدون خلفية/08_هيلو_كيتي_كعكة_عيد_ميلاد.png" alt="ملصق كعكة">
+      <p class="margin-note" data-editable data-edit-key="memories-margin">كل صورة هنا، تقول: يا حلوة من زمان.</p>
+    </section>
+
+    <section class="things chapter" id="things-sec">
+      <p class="eyebrow" data-editable data-edit-key="things-eyebrow">لو كانت فرح صفحة</p>
+      <h2 data-editable data-edit-key="things-heading">كانت بتكون مليانة أشياء حلوة.</h2>
+      <div class="things-stage">
+        <button class="thing coffee" data-scroll="coffee">
+          <span>☕</span>
+          <b data-editable data-edit-key="thing-coffee-title">قهوة</b>
+          <small data-editable data-edit-key="thing-coffee-sub">لحظات دافئة</small>
+        </button>
+        <button class="thing matcha" data-scroll="matcha">
+          <span>🍵</span>
+          <b data-editable data-edit-key="thing-matcha-title">ماتشا</b>
+          <small data-editable data-edit-key="thing-matcha-sub">لونها يليق فيك</small>
+        </button>
+        <button class="thing flowers" data-scroll="flowers">
+          <span>✿</span>
+          <b data-editable data-edit-key="thing-flowers-title">ورد</b>
+          <small data-editable data-edit-key="thing-flowers-sub">لأنك تستاهلينه</small>
+        </button>
+        <div class="kitty-sticker">₊˚⊹<br>♡</div>
+      </div>
+    </section>
+
+    <section class="scrapbook mini-albums chapter" id="albums">
+      <div class="album-title">
+        <p data-editable data-edit-key="albums-eyebrow">تفاصيل صغيرة</p>
+        <h2 data-editable data-edit-key="albums-heading">بسها تصنع جوّك كله.</h2>
+      </div>
+      <div class="album-tabs">
+        <button data-target="coffee" class="active" data-editable data-edit-key="album-tab-coffee">قهوة</button>
+        <button data-target="matcha" data-editable data-edit-key="album-tab-matcha">ماتشا</button>
+        <button data-target="flowers" data-editable data-edit-key="album-tab-flowers">ورد</button>
+      </div>
+      <div class="photo-wall album-wall" data-folder="قهوه"></div>
+      <img class="admin-sticker sticker-three" data-sticker-id="sticker-3" src="assets/هيلو كيتي/صور بدون خلفية/15_هيلو_كيتي_كاميرا_تصوير.png" alt="ملصق Hello Kitty">
+    </section>
+
+    <section class="notes chapter">
+      <p class="eyebrow" data-editable data-edit-key="notes-eyebrow">أشياء قالتها، وعلقت</p>
+      <div class="notes-wrap">
+        <div class="note note-one" data-editable data-edit-key="note-1">"لا تتغير كثير، بس اهتم بنفسك أكثر."</div>
+        <div class="note note-two" data-editable data-edit-key="note-2">"الكلام الحلو أحيانًا يجي في وقته بالضبط."</div>
+        <div class="note note-three" data-editable data-edit-key="note-3">"كل شيء يتصلح، بس لا تنسى نفسك."</div>
+        <div class="note note-four" data-editable data-edit-key="note-4">"ضحكتك أحلى شيء في اليوم."</div>
+      </div>
+      <div class="tape-strip"></div>
+    </section>
+
+    <section class="music chapter" id="music">
+      <p class="eyebrow" data-editable data-edit-key="music-eyebrow">لما الكلام ما يكفي</p>
+      <h2 data-editable data-edit-key="music-heading">هذي الأغاني كأنها مشاهد.</h2>
+      <div class="player-shell">
+        <div class="record-wrap">
+          <img class="album-art" alt="غلاف الأغنية">
+          <button class="vinyl" aria-label="تشغيل الأغنية"><span></span></button>
+        </div>
+        <div class="track-info">
+          <p class="now-playing" data-editable data-edit-key="music-now">اختاري أغنية</p>
+          <h3 class="track-title" data-editable data-edit-key="music-title">—</h3>
+          <p class="track-artist" data-editable data-edit-key="music-artist">—</p>
+          <div class="progress"><span></span></div>
+          <button class="play-toggle" data-editable data-edit-key="music-play">تشغيل ♫</button>
+        </div>
+      </div>
+      <div class="track-list"></div>
+      <audio id="audio"></audio>
+    </section>
+
+    <section class="voice chapter">
+      <div class="cassette">
+        <div class="cassette-label">
+          <p data-editable data-edit-key="cassette-label-1">رسالة بصوتها</p>
+          <b data-editable data-edit-key="cassette-label-2">play me when you need a smile</b>
+        </div>
+        <div class="reels"><i></i><i></i></div>
+      </div>
+      <div class="voice-copy">
+        <p class="eyebrow" data-editable data-edit-key="voice-eyebrow">للأوقات الهادئة</p>
+        <h2 data-editable data-edit-key="voice-heading">صوتها له مكانه الخاص.</h2>
+        <div class="voice-buttons"></div>
+      </div>
+    </section>
+
+    <section class="grown chapter">
+      <div class="grown-photo">
+        <img src="assets/صوره وهي كبيره/828561186_1570489221518641_637141106224859903_n.jpg" alt="فرح">
+        <span>✿</span>
+      </div>
+      <div class="grown-copy">
+        <p class="eyebrow" data-editable data-edit-key="grown-eyebrow">ولما كبرتِ…</p>
+        <h2 data-editable data-edit-key="grown-heading">بقيتِ نفس اللطافة، بس أكبر وأجمل.</h2>
+        <p data-editable data-edit-key="grown-desc">وهذه الصورة تذكير صغير إنك مهما كبرتي، يظل فيك شيء يخلّي كل الناس تبتسم.</p>
+      </div>
+    </section>
+
+    <section class="letter chapter">
+      <p data-editable data-edit-key="letter-to">فرح،</p>
+      <h2 data-editable data-edit-key="letter-heading">كل سنة وأنتِ ألطف تفصيلة في حكايات ناس كثير.</h2>
+      <p data-editable data-edit-key="letter-body">يمكن ما تعرفين قد إيش وجودك يفرق، بس أتمنى كل صفحة هنا تذكّرك بشيء بسيط: إنك محبوبة، ومميزة، وتستاهلين كل الأشياء الحلوة.</p>
+      <p class="signature" data-editable data-edit-key="letter-signature">من شخص كان سعيد جدًا إنه عرفك. 🎀🤍</p>
+    </section>
+
+    <section class="final-video chapter">
+      <div class="video-before">
+        <span>♡</span>
+        <p data-editable data-edit-key="video-before-text">لسه ما خلصنا... 🎀</p>
+        <button class="reveal-video" data-editable data-edit-key="video-reveal-btn">افتحي المفاجأة</button>
+      </div>
+      <div class="video-content">
+        <video controls preload="metadata" src="assets/هيلو كيتي/(3)Hello Kitty Happy Birthday 24.10.2010 – Video Sinh Nhật Cute _ TikTok(1).mp4"></video>
+        <h2 data-editable data-edit-key="video-title">Happy Birthday, Farah 🎀🤍</h2>
+      </div>
+    </section>
+  </main>
+
+  <div class="choice-scene" aria-hidden="true">
+    <div class="crying-kitty">
+      <img src="https://toppng.com/uploads/preview/hello-kittys-face-is-sad-309191728133934m7uwokn0mq.webp" alt="Hello Kitty تبكي">
+    </div>
+    <p data-editable data-edit-key="sad-text">أوووه… متأكدة؟ 🥺🎀</p>
+    <button class="try-yes" data-editable data-edit-key="sad-btn">طيب افتحيها</button>
+  </div>
+
+  <div class="gift-reveal" aria-hidden="true">
+    <div class="gift-card">
+      <span>🎁</span>
+      <p class="gift-line" data-editable data-edit-key="gift-line">هديتك وصلت 🎀</p>
+      <h2 class="gift-subline" data-editable data-edit-key="gift-subline">افتحيها على مهلك</h2>
+      <button class="open-gift" data-editable data-edit-key="open-gift-btn">افتحي الهدية</button>
+    </div>
+  </div>
+
+  <div class="lightbox">
+    <button>×</button>
+    <img alt="ذكرى مكبرة">
+    <p contenteditable="false"></p>
+  </div>
+
+  <!-- نافذة إعدادات Supabase السحابية -->
+  <div id="supabase-dialog" class="pin-dialog-backdrop" aria-hidden="true">
+    <div class="pin-dialog supabase-dialog-card">
+      <button class="close-pin-dialog" id="close-supabase-dialog" aria-label="إغلاق">×</button>
+      <div class="pin-icon">⚡ ☁️</div>
+      <h3>حفظ التعديلات أونلاين (Supabase)</h3>
+      <p>لحفظ التعديلات في السحاب والوصول إليها من أي جهاز في العالم:</p>
+      
+      <div class="supabase-form">
+        <label>Project URL (رابط المشروع):</label>
+        <input type="text" id="supabase-url-input" placeholder="https://xxxx.supabase.co" dir="ltr">
+        
+        <label>Anon Public Key (المفتاح العام):</label>
+        <input type="text" id="supabase-key-input" placeholder="eyJhbGciOiJIUz..." dir="ltr">
+        
+        <div id="supabase-status-msg" class="supabase-status-msg"></div>
+        
+        <div class="pin-dialog-actions">
+          <button id="save-supabase-btn" class="submit-pin-btn">تفعيل وربط السحاب الآن</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
