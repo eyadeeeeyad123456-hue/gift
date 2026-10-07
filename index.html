@@ -149,7 +149,14 @@
           <p class="now-playing" data-editable data-edit-key="music-now">اختاري أغنية</p>
           <h3 class="track-title" data-editable data-edit-key="music-title">—</h3>
           <p class="track-artist" data-editable data-edit-key="music-artist">—</p>
-          <div class="progress"><span></span></div>
+          <div class="progress-wrap">
+            <span class="curr-time">0:00</span>
+            <div class="progress" role="slider" aria-label="شريط تقدم الأغنية">
+              <span></span>
+              <div class="prog-pin"></div>
+            </div>
+            <span class="total-time">0:00</span>
+          </div>
           <button class="play-toggle" data-editable data-edit-key="music-play">تشغيل ♫</button>
         </div>
       </div>
@@ -168,6 +175,18 @@
       <div class="voice-copy">
         <p class="eyebrow" data-editable data-edit-key="voice-eyebrow">للأوقات الهادئة</p>
         <h2 data-editable data-edit-key="voice-heading">صوتها له مكانه الخاص.</h2>
+        <div class="voice-player-bar">
+          <div class="voice-info">
+            <span class="voice-name">اختاري تسجيلاً للاستماع</span>
+            <span class="voice-time">0:00 / 0:00</span>
+          </div>
+          <div class="voice-progress-wrap">
+            <div class="voice-progress" role="slider" aria-label="شريط تقدم التسجيل">
+              <span></span>
+              <div class="voice-pin"></div>
+            </div>
+          </div>
+        </div>
         <div class="voice-buttons"></div>
       </div>
     </section>

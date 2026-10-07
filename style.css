@@ -603,6 +603,15 @@ button {
   height: 270px;
   position: relative;
   flex: none;
+  animation: spin 8s linear infinite;
+  animation-play-state: paused;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px #00000088;
+}
+
+.music.playing .record-wrap {
+  animation-play-state: running;
 }
 
 .album-art {
@@ -613,6 +622,7 @@ button {
   position: absolute;
   inset: 53px;
   z-index: 1;
+  pointer-events: none;
 }
 
 .vinyl {
@@ -623,7 +633,7 @@ button {
   height: 270px;
   position: absolute;
   inset: 0;
-  box-shadow: 0 10px 30px #00000088;
+  cursor: pointer;
 }
 
 .vinyl span {
@@ -635,10 +645,6 @@ button {
   margin: auto;
 }
 
-.music.playing .vinyl {
-  animation: spin 5s linear infinite;
-}
-
 .track-info h3 {
   font: 700 2.1rem var(--hand);
   margin: 10px 0 6px;
@@ -646,30 +652,72 @@ button {
 
 .track-artist {
   color: #e7a7b9;
-  margin: 0 0 18px;
+  margin: 0 0 14px;
+}
+
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  margin: 12px 0 6px;
+  direction: ltr;
+}
+
+.curr-time, .total-time {
+  font-size: 0.8rem;
+  color: #f6bac8;
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+  text-align: center;
+  user-select: none;
 }
 
 .progress {
-  height: 4px;
-  background: #845967;
-  width: 280px;
-  border-radius: 2px;
-  overflow: hidden;
+  flex: 1;
+  height: 8px;
+  background: #503d4a;
+  border-radius: 6px;
+  position: relative;
+  cursor: pointer;
+  touch-action: none;
 }
 
 .progress span {
   height: 100%;
-  background: #f6bac8;
+  background: linear-gradient(90deg, #d85f7f, #f6bac8);
+  border-radius: 6px;
   display: block;
   width: 0;
-  transition: width 0.2s linear;
+  pointer-events: none;
+  transition: width 0.1s linear;
 }
 
+.prog-pin {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 2px solid #d85f7f;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  pointer-events: none;
+  transition: transform 0.1s;
+}
+
+.progress:hover .prog-pin,
+.progress:active .prog-pin {
+  transform: translate(-50%, -50%) scale(1.25);
+}
 .play-toggle {
   border: 1px solid #f1bdc8;
   background: transparent;
   color: white;
-  margin-top: 22px;
+  margin-top: 14px;
   padding: 10px 22px;
   border-radius: 25px;
   font-weight: 600;
@@ -768,12 +816,96 @@ button {
   border: 10px dotted #663848;
   border-radius: 50%;
   background: #f6d3ce;
+  display: inline-block;
+}
+
+.reels.spinning i {
+  animation: spin 2.2s linear infinite;
 }
 
 .voice-copy h2 {
   font: 700 clamp(2.3rem, 5vw, 3.2rem) / 1.3 var(--hand);
   max-width: 390px;
-  margin: 10px 0 20px;
+  margin: 10px 0 16px;
+}
+
+.voice-player-bar {
+  margin: 16px 0 18px;
+  padding: 12px 18px;
+  background: #fff8f5;
+  border: 1px dashed #d596a5;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(112, 65, 75, 0.08);
+  max-width: 380px;
+  text-align: right;
+}
+
+.voice-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  color: #633c46;
+  margin-bottom: 8px;
+}
+
+.voice-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.voice-time {
+  font-variant-numeric: tabular-nums;
+  color: #a25b6c;
+  font-size: 0.82rem;
+  direction: ltr;
+}
+
+.voice-progress-wrap {
+  width: 100%;
+  direction: ltr;
+}
+
+.voice-progress {
+  width: 100%;
+  height: 8px;
+  background: #edd5d1;
+  border-radius: 6px;
+  position: relative;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.voice-progress span {
+  height: 100%;
+  background: linear-gradient(90deg, #d85f7f, #eb8ca5);
+  border-radius: 6px;
+  display: block;
+  width: 0;
+  pointer-events: none;
+  transition: width 0.1s linear;
+}
+
+.voice-pin {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 2px solid #b54e74;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  pointer-events: none;
+}
+
+.voice-progress:hover .voice-pin,
+.voice-progress:active .voice-pin {
+  transform: translate(-50%, -50%) scale(1.25);
 }
 
 .voice-buttons button {
@@ -788,7 +920,10 @@ button {
   transition: all 0.2s;
 }
 
-.voice-buttons button:active {
+.voice-buttons button:active,
+.voice-buttons button.playing {
+  background: #d85f7f;
+  color: white;
   transform: translateY(2px);
   box-shadow: 0 1px 0 #a95a6e;
 }
@@ -1643,20 +1778,24 @@ button {
     inset: 42px;
   }
 
-  .progress {
-    width: 85%;
-    max-width: 250px;
+  .progress-wrap {
     margin: 12px auto 0;
+    max-width: 280px;
   }
 
   .play-toggle {
-    margin-top: 16px;
+    margin-top: 14px;
     padding: 9px 20px;
   }
 
   .track-list button {
     padding: 8px 14px;
     font-size: 0.88rem;
+  }
+
+  .voice-player-bar {
+    max-width: 92vw;
+    margin: 14px auto;
   }
 
   /* Voice Recording Mobile */

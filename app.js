@@ -121,11 +121,22 @@ function initExtraStickers() {
   });
 }
 
-// الأغاني
+// تنسيق الوقت (دقائق:ثواني)
+function formatTime(sec) {
+  if (!sec || isNaN(sec)) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+// الأغاني (الأغاني السابقة + الأغاني الجديدة مع أغلفتها)
 const songs = [
   { title: 'The Winner Takes It All', artist: 'ABBA', file: 'ABBA - Winner take it all .mp3', cover: 'https://editorial.universal881.com/wp-content/uploads/2024/08/The-Winner-Takes-It-All-1-ABBA.jpg' },
   { title: 'Circles', artist: 'Mac Miller', file: 'Circles.mp3', cover: 'assets/circles-cover.png' },
-  { title: 'Love', artist: 'Keyshia Cole', file: 'Keyshia_Cole_-_Love.mp3', cover: 'https://i1.sndcdn.com/artworks-000121915269-8lladc-t500x500.jpg' }
+  { title: 'Love', artist: 'Keyshia Cole', file: 'Keyshia_Cole_-_Love.mp3', cover: 'https://i1.sndcdn.com/artworks-000121915269-8lladc-t500x500.jpg' },
+  { title: 'أجيلك شوق', artist: 'أنغام', file: 'Ajelk_shooq.mp3', cover: 'assets/اغاني تحبها/ajelk_shooq.webp' },
+  { title: 'عمري معاك', artist: 'أنغام', file: 'Omry_Maak.mp3', cover: 'assets/اغاني تحبها/Omry-Maak.jpg' },
+  { title: 'Risk It All', artist: 'Bruno Mars', file: 'Risk It All .mp3', cover: 'assets/اغاني تحبها/risk it all.jpg' }
 ];
 
 const audio = document.querySelector('#audio');
@@ -147,6 +158,12 @@ function setupAudioPlayer() {
     }).join('');
   }
 
+  const progressEl = document.querySelector('.progress');
+  const progPin = document.querySelector('.prog-pin');
+  const currTimeEl = document.querySelector('.curr-time');
+  const totalTimeEl = document.querySelector('.total-time');
+  const recordWrap = document.querySelector('.record-wrap');
+
   function chooseSong(i) {
     chosen = i;
     const s = songs[i];
@@ -158,6 +175,7 @@ function setupAudioPlayer() {
     artist.textContent = editedLabel?.[1] || s.artist;
     now.textContent = 'الآن تدور الأغنية ♫';
     document.querySelectorAll('[data-song]').forEach(b => b.classList.toggle('active', +b.dataset.song === i));
+    if (currTimeEl) currTimeEl.textContent = '0:00';
   }
 
   chooseSong(0);
@@ -179,8 +197,7 @@ function setupAudioPlayer() {
   }
 
   if (play) play.onclick = togglePlay;
-  const vinylBtn = document.querySelector('.vinyl');
-  if (vinylBtn) vinylBtn.onclick = togglePlay;
+  if (recordWrap) recordWrap.onclick = togglePlay;
 
   audio.onplay = () => {
     music?.classList.add('playing');
@@ -190,57 +207,164 @@ function setupAudioPlayer() {
     music?.classList.remove('playing');
     if (play) play.textContent = 'تشغيل ♫';
   };
+
   audio.ontimeupdate = () => {
+    if (!audio.duration) return;
+    const percent = (audio.currentTime / audio.duration) * 100 || 0;
     const prog = document.querySelector('.progress span');
-    if (prog) prog.style.width = ((audio.currentTime / audio.duration) * 100 || 0) + '%';
+    if (prog) prog.style.width = percent + '%';
+    if (progPin) progPin.style.left = percent + '%';
+    if (currTimeEl) currTimeEl.textContent = formatTime(audio.currentTime);
+    if (totalTimeEl) totalTimeEl.textContent = formatTime(audio.duration);
   };
+
+  audio.onloadedmetadata = () => {
+    if (totalTimeEl && audio.duration) totalTimeEl.textContent = formatTime(audio.duration);
+  };
+
   audio.onended = () => chooseSong((chosen + 1) % songs.length);
+
+  // السحب والتقديم في الأغنية
+  let isSeekingSong = false;
+  function seekSongByEvent(e) {
+    if (!audio.duration || !progressEl) return;
+    const rect = progressEl.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * audio.duration;
+  }
+
+  if (progressEl) {
+    progressEl.addEventListener('click', seekSongByEvent);
+    progressEl.addEventListener('pointerdown', e => {
+      isSeekingSong = true;
+      progressEl.setPointerCapture(e.pointerId);
+      seekSongByEvent(e);
+    });
+    progressEl.addEventListener('pointermove', e => {
+      if (isSeekingSong) seekSongByEvent(e);
+    });
+    progressEl.addEventListener('pointerup', () => { isSeekingSong = false; });
+  }
 }
 
-// التسجيلات الصوتية
-const voiceFiles = ['اغنيه.ogg', 'Instagram • الرسائل.ogg'];
+// التسجيلات الصوتية (بما فيها التسجيل الجديد وهي تغني)
+const voiceFiles = [
+  { file: 'اغنيه.ogg', title: 'تسجيل 1 (مقطع قصير)' },
+  { file: 'Instagram • الرسائل.ogg', title: 'تسجيل 2 (رسالة إنستغرام)' },
+  { file: 'روح_انسا.mp3', title: 'تسجيل 3 (روح انسى 🎶)' }
+];
 let voiceAudio = null;
-let activeVoiceButton = null;
-let voiceAnimation = null;
+let activeVoiceIndex = -1;
 
 function setupVoicePlayer() {
   const container = document.querySelector('.voice-buttons');
+  const voiceNameEl = document.querySelector('.voice-name');
+  const voiceTimeEl = document.querySelector('.voice-time');
+  const voiceProgEl = document.querySelector('.voice-progress');
+  const voiceProgSpan = document.querySelector('.voice-progress span');
+  const voicePin = document.querySelector('.voice-pin');
+  const reels = document.querySelector('.reels');
+  const cassette = document.querySelector('.cassette');
+
   if (!container) return;
   container.innerHTML = voiceFiles.map((x, i) => `
-    <button data-voice="${x}">▶ تسجيل ${i + 1}</button>
+    <button data-voice-idx="${i}">▶ ${x.title}</button>
   `).join('');
 
-  document.querySelectorAll('[data-voice]').forEach(button => {
-    button.onclick = () => {
-      const isSame = activeVoiceButton === button;
-      if (isSame && voiceAudio && !voiceAudio.paused) {
+  function playVoice(idx) {
+    const isSame = activeVoiceIndex === idx;
+    if (isSame && voiceAudio) {
+      if (voiceAudio.paused) {
+        voiceAudio.play().catch(() => {});
+      } else {
         voiceAudio.pause();
-        button.textContent = `▶ ${button.dataset.voice.includes('Instagram') ? 'تسجيل 2' : 'تسجيل 1'}`;
-        if (voiceAnimation) voiceAnimation.pause();
-        return;
       }
-      if (voiceAudio) voiceAudio.pause();
-      document.querySelectorAll('[data-voice]').forEach(b => {
-        b.textContent = `▶ ${b.dataset.voice.includes('Instagram') ? 'تسجيل 2' : 'تسجيل 1'}`;
+      return;
+    }
+
+    if (voiceAudio) {
+      voiceAudio.pause();
+    }
+
+    activeVoiceIndex = idx;
+    const item = voiceFiles[idx];
+    if (voiceNameEl) voiceNameEl.textContent = item.title;
+    voiceAudio = new Audio(asset + 'تغني/' + item.file);
+
+    voiceAudio.onplay = () => {
+      reels?.classList.add('spinning');
+      cassette?.classList.add('playing');
+      document.querySelectorAll('[data-voice-idx]').forEach(b => {
+        const isCurrent = +b.dataset.voiceIdx === idx;
+        b.classList.toggle('playing', isCurrent);
+        b.textContent = isCurrent ? `❚❚ ${voiceFiles[+b.dataset.voiceIdx].title}` : `▶ ${voiceFiles[+b.dataset.voiceIdx].title}`;
       });
-      voiceAudio = new Audio(asset + 'تغني/' + button.dataset.voice);
-      activeVoiceButton = button;
-      button.textContent = '❚❚ إيقاف مؤقت';
-      voiceAudio.play().catch(() => {});
-      const cassette = document.querySelector('.cassette');
-      if (cassette) {
-        voiceAnimation = cassette.animate([
-          { transform: 'rotate(-5deg)' },
-          { transform: 'rotate(-3deg)' },
-          { transform: 'rotate(-5deg)' }
-        ], { duration: 500, iterations: Infinity });
+    };
+
+    voiceAudio.onpause = () => {
+      reels?.classList.remove('spinning');
+      cassette?.classList.remove('playing');
+      document.querySelectorAll('[data-voice-idx]').forEach(b => {
+        b.classList.remove('playing');
+        b.textContent = `▶ ${voiceFiles[+b.dataset.voiceIdx].title}`;
+      });
+    };
+
+    voiceAudio.ontimeupdate = () => {
+      if (!voiceAudio || !voiceAudio.duration) return;
+      const pct = (voiceAudio.currentTime / voiceAudio.duration) * 100 || 0;
+      if (voiceProgSpan) voiceProgSpan.style.width = pct + '%';
+      if (voicePin) voicePin.style.left = pct + '%';
+      if (voiceTimeEl) voiceTimeEl.textContent = `${formatTime(voiceAudio.currentTime)} / ${formatTime(voiceAudio.duration)}`;
+    };
+
+    voiceAudio.onloadedmetadata = () => {
+      if (voiceTimeEl && voiceAudio.duration) {
+        voiceTimeEl.textContent = `0:00 / ${formatTime(voiceAudio.duration)}`;
       }
-      voiceAudio.onended = () => {
-        button.textContent = `▶ ${button.dataset.voice.includes('Instagram') ? 'تسجيل 2' : 'تسجيل 1'}`;
-        if (voiceAnimation) voiceAnimation.cancel();
-      };
+    };
+
+    voiceAudio.onended = () => {
+      reels?.classList.remove('spinning');
+      cassette?.classList.remove('playing');
+      if (voiceProgSpan) voiceProgSpan.style.width = '0%';
+      if (voicePin) voicePin.style.left = '0%';
+      document.querySelectorAll('[data-voice-idx]').forEach(b => {
+        b.classList.remove('playing');
+        b.textContent = `▶ ${voiceFiles[+b.dataset.voiceIdx].title}`;
+      });
+    };
+
+    voiceAudio.play().catch(() => {});
+  }
+
+  document.querySelectorAll('[data-voice-idx]').forEach(button => {
+    button.onclick = () => {
+      playVoice(+button.dataset.voiceIdx);
     };
   });
+
+  // السحب والتقديم في الفويس
+  let isSeekingVoice = false;
+  function seekVoiceByEvent(e) {
+    if (!voiceAudio || !voiceAudio.duration || !voiceProgEl) return;
+    const rect = voiceProgEl.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    voiceAudio.currentTime = ratio * voiceAudio.duration;
+  }
+
+  if (voiceProgEl) {
+    voiceProgEl.addEventListener('click', seekVoiceByEvent);
+    voiceProgEl.addEventListener('pointerdown', e => {
+      isSeekingVoice = true;
+      voiceProgEl.setPointerCapture(e.pointerId);
+      seekVoiceByEvent(e);
+    });
+    voiceProgEl.addEventListener('pointermove', e => {
+      if (isSeekingVoice) seekVoiceByEvent(e);
+    });
+    voiceProgEl.addEventListener('pointerup', () => { isSeekingVoice = false; });
+  }
 }
 
 // التعديلات والحفظ في السيرفر والمزامنة السحابية (Supabase & Local)
