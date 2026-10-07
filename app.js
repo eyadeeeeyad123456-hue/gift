@@ -284,6 +284,47 @@ function initSupabase() {
   return false;
 }
 
+// جلب البيانات من Supabase مباشرة
+async function fetchFromSupabase(cfg) {
+  const url = `${cfg.url}/rest/v1/${cfg.tableName || 'site_data'}?id=eq.${cfg.recordId || 'farah_scrapbook'}&select=*`;
+  const res = await fetch(url, {
+    headers: {
+      'apikey': cfg.anonKey,
+      'Authorization': 'Bearer ' + cfg.anonKey
+    }
+  });
+  if (!res.ok) throw new Error('فشل جلب البيانات من Supabase: ' + res.status);
+  const rows = await res.json();
+  if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
+    return rows[0].data;
+  }
+  return null;
+}
+
+// حفظ البيانات في Supabase مباشرة
+async function upsertToSupabase(cfg, dataToSave) {
+  const url = `${cfg.url}/rest/v1/${cfg.tableName || 'site_data'}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': cfg.anonKey,
+      'Authorization': 'Bearer ' + cfg.anonKey,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify({
+      id: cfg.recordId || 'farah_scrapbook',
+      data: dataToSave,
+      updated_at: new Date().toISOString()
+    })
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error('خطأ Supabase: ' + errText);
+  }
+  return true;
+}
+
 // جلب التعديلات (من Supabase أولاً إن وجد، أو من السيرفر المحلي)
 async function loadServerData() {
   // 1. قراءة فورية من التخزين المؤقت
@@ -296,21 +337,13 @@ async function loadServerData() {
   }
 
   // 2. إذا كان Supabase مفعلاً، نقرأ منه مباشرة
-  if (initSupabase() && supabaseClient) {
+  const cfg = getSupabaseSettings();
+  if (cfg && cfg.url && cfg.anonKey) {
     try {
-      const cfg = getSupabaseSettings();
-      const tableName = cfg?.tableName || 'site_data';
-      const recordId = cfg?.recordId || 'farah_scrapbook';
-
-      const { data, error } = await supabaseClient
-        .from(tableName)
-        .select('data')
-        .eq('id', recordId)
-        .maybeSingle();
-
-      if (!error && data && data.data) {
-        siteData.texts = data.data.texts || {};
-        siteData.stickers = data.data.stickers || {};
+      const cloudData = await fetchFromSupabase(cfg);
+      if (cloudData) {
+        siteData.texts = cloudData.texts || {};
+        siteData.stickers = cloudData.stickers || {};
         localStorage.setItem('farah_cloud_data', JSON.stringify(siteData));
         applyDataToDOM();
         if (syncStatus) syncStatus.textContent = '⚡ متزامن سحابياً (Supabase)';
@@ -371,28 +404,14 @@ async function saveToServer(manual = false) {
   // حفظ محلي فوري
   localStorage.setItem('farah_cloud_data', JSON.stringify(siteData));
 
-  // 1. إذا كان Supabase مفعلاً، نحفظ في سحابة Supabase
-  if (supabaseClient || initSupabase()) {
+  // 1. إذا كان Supabase مفعلاً، نحفظ في سحابة Supabase مباشرة
+  const cfg = getSupabaseSettings();
+  if (cfg && cfg.url && cfg.anonKey) {
     try {
-      const cfg = getSupabaseSettings();
-      const tableName = cfg?.tableName || 'site_data';
-      const recordId = cfg?.recordId || 'farah_scrapbook';
-
-      const { error } = await supabaseClient
-        .from(tableName)
-        .upsert({
-          id: recordId,
-          data: siteData,
-          updated_at: new Date().toISOString()
-        });
-
-      if (!error) {
-        if (syncStatus) syncStatus.textContent = '⚡ متزامن سحابياً (Supabase) ✓';
-        if (manual) showToast('تم الحفظ في سحابة Supabase بنجاح ⚡☁️');
-        return;
-      } else {
-        console.warn('تعذر الحفظ في Supabase:', error);
-      }
+      await upsertToSupabase(cfg, siteData);
+      if (syncStatus) syncStatus.textContent = '⚡ متزامن سحابياً (Supabase) ✓';
+      if (manual) showToast('تم الحفظ في سحابة Supabase بنجاح ⚡☁️');
+      return;
     } catch (err) {
       console.warn('خطأ أثناء حفظ Supabase:', err);
     }
